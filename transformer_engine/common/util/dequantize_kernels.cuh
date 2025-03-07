@@ -54,7 +54,7 @@ __global__ void __launch_bounds__(THREADS_PER_CHUNK)
                             const __grid_constant__ CUtensorMap tensor_map_output,
                             const e8m0_t *const scales_ptr, const size_t rows, const size_t cols,
                             const size_t scales_stride) {
-#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
   constexpr bool USE_ROWWISE_SCALING = SCALE_DIM_X > 1;
   constexpr bool USE_COLWISE_SCALING = SCALE_DIM_Y > 1;
 

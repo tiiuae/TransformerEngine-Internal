@@ -66,7 +66,7 @@ __global__ void __launch_bounds__(MXFP8_THREADS_PER_CHUNK)
                          const float *noop, float *const dbias_workspace, float *const amax_ptr,
                          const size_t rows, const size_t cols, const size_t scale_stride_rowwise,
                          const size_t scale_stride_colwise) {
-#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
   if constexpr (!IS_DBIAS && !IS_DACT && !IS_ACT) {
     if (noop != nullptr && noop[0] == 1.0f) return;
   }
@@ -447,7 +447,7 @@ __global__ void __launch_bounds__(MXFP8_THREADS_PER_CHUNK)
   }
 
   destroy_barriers<MXFP8_ITERATIONS>(mbar, is_master_thread);
-#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
 }
 
 constexpr size_t FP8_CHUNK_DIM_Y = 128;
@@ -475,7 +475,7 @@ __global__ void __launch_bounds__(FP8_THREADS_PER_CHUNK)
                        float *const dbias_workspace, float *const amax_ptr,
                        float *const scale_inv_ptr, const float *const scale_ptr, const size_t rows,
                        const size_t cols) {
-#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
 
   const int block_offset_Y = blockIdx.y * FP8_CHUNK_DIM_Y;
   const int block_offset_X = blockIdx.x * FP8_CHUNK_DIM_X;
@@ -641,7 +641,7 @@ __global__ void __launch_bounds__(FP8_THREADS_PER_CHUNK)
   }
 
   destroy_barriers<FP8_ITERATIONS>(mbar, is_master_thread);
-#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
 }
 
 constexpr size_t CHUNKS_PER_BLOCK = 128;
@@ -659,7 +659,7 @@ template <bool IS_ACT, typename ParamOP, float (*OP)(float, const ParamOP &), ty
 __global__ void __launch_bounds__(THREADS_PER_BLOCK)
     cast_fp8_1D_kernel(const IType *input_ptr, OType *output_ptr, float *const amax_ptr,
                        float *const scale_inv_ptr, const float *const scale_ptr, const size_t N) {
-#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
 
   const int block_offset = blockIdx.x * ELEMS_PER_BLOCK;
   const IType *input = input_ptr + block_offset;
@@ -755,7 +755,7 @@ __global__ void __launch_bounds__(THREADS_PER_BLOCK)
   }
 
   destroy_barriers<ITERATIONS>(mbar, is_master_thread);
-#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
 }
 
 constexpr size_t DBIAS_THREADS_PER_BLOCK = 256;
