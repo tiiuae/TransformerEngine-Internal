@@ -16,6 +16,7 @@ from .. import cpp_extensions as tex
 from ..constants import TE_DType
 from ..utils import get_default_init_method
 from ..tensor.float8_tensor import Float8Tensor
+from ..tensor.float8_blockwise_tensor import Float8BlockQuantizer
 from ..tensor.mxfp8_tensor import MXFP8Quantizer
 
 _use_cudnn_mxfp8_norm = bool(int(os.getenv("NVTE_CUDNN_MXFP8_NORM", "0")))
@@ -87,7 +88,7 @@ def apply_normalization(
     inputs = (inputmat, ln_weight) if ln_bias is None else (inputmat, ln_weight, ln_bias)
 
     split_mxfp8_cast = False
-    if not _use_cudnn_mxfp8_norm and isinstance(output_quantizer, MXFP8Quantizer):
+    if not _use_cudnn_mxfp8_norm and (isinstance(output_quantizer, MXFP8Quantizer) or isinstance(output_quantizer, Float8BlockQuantizer)):
         split_mxfp8_cast = True
 
     output = normalization_func(

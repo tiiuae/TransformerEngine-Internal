@@ -50,6 +50,8 @@ std::string to_string(const NVTEScalingMode &mode) {
       return "Delayed Tensor Scaling";
     case NVTE_MXFP8_1D_SCALING:
       return "MXFP8 1D Scaling";
+    case NVTE_BLOCK_SCALING:
+      return "MXFP8 1D Scaling";
     case NVTE_INVALID_SCALING:
       return "Invalid Scaling";
   }

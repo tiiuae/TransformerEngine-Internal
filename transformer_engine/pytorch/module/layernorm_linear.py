@@ -55,6 +55,7 @@ from ..tensor.quantized_tensor import (
     restore_from_saved,
 )
 from ..tensor.mxfp8_tensor import MXFP8Quantizer
+from ..tensor.float8_blockwise_tensor import Float8BlockQuantizer
 from ..cpu_offload import is_cpu_offload_enabled, set_offloading_param
 
 from ..cpp_extensions import (
@@ -162,7 +163,7 @@ class _LayerNormLinear(torch.autograd.Function):
         if with_quantized_norm:
             if with_input_all_gather:
                 input_quantizer.set_usage(rowwise=True, columnwise=False)
-                if isinstance(input_quantizer, MXFP8Quantizer):
+                if isinstance(input_quantizer, MXFP8Quantizer) or isinstance(input_quantizer, Float8BlockQuantizer):
                     with_quantized_norm = False
             else:
                 input_quantizer.set_usage(
