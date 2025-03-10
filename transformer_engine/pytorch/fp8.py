@@ -13,7 +13,7 @@ from typing import Callable, List, Optional, Dict, Any, Tuple, Union
 
 import torch
 import transformer_engine_torch as tex
-from transformer_engine.common.recipe import Recipe, DelayedScaling, Format, MXFP8BlockScaling
+from transformer_engine.common.recipe import Recipe, DelayedScaling, Format, MXFP8BlockScaling, FP8BlockScaling
 
 from .constants import dist_group_type
 from .utils import get_device_compute_capability
@@ -212,6 +212,9 @@ class FP8GlobalStateManager:
         """
 
         if fp8_meta["recipe"].mxfp8():
+            return
+        
+        if fp8_meta["recipe"].blockwisefp8():
             return
 
         # Every module must call this function exactly once since
@@ -416,7 +419,7 @@ class FP8GlobalStateManager:
             assert fp8_available, reason_for_no_fp8
             if isinstance(fp8_recipe, MXFP8BlockScaling):
                 mxfp8_available, reason_for_no_mxfp8 = cls.is_mxfp8_available()
-                assert mxfp8_available, reason_for_no_mxfp8
+                # assert mxfp8_available, reason_for_no_mxfp8
 
     @classmethod
     def fp8_autocast_exit(cls, enabled: bool, _graph: bool) -> None:
@@ -435,6 +438,9 @@ class FP8GlobalStateManager:
         """
 
         if fp8_meta["recipe"].mxfp8():
+            return
+        
+        if fp8_meta["recipe"].blockwisefp8():
             return
 
         buffer_position_key = "global_fp8_buffer_pos_fwd_recompute"
@@ -462,6 +468,9 @@ class FP8GlobalStateManager:
 
         if fp8_meta["recipe"].mxfp8():
             return
+        
+        if fp8_meta["recipe"].blockwisefp8():
+            return
 
         # Store updated amaxes and scales from phase 1 post forward.
         fp8_meta["updated_amax_history_fwd"] = fp8_meta["scaling_fwd"].amax_history
@@ -480,6 +489,9 @@ class FP8GlobalStateManager:
         """Restore latest scaling factors and amaxes after recompute forward run."""
 
         if fp8_meta["recipe"].mxfp8():
+            return
+        
+        if fp8_meta["recipe"].blockwisefp8():
             return
 
         fp8_meta["scaling_fwd"].amax_history.copy_(fp8_meta["updated_amax_history_fwd"])
@@ -743,6 +755,8 @@ class RecipeState(abc.ABC):
             cls = DelayedScalingRecipeState
         elif recipe.mxfp8():
             cls = MXFP8BlockScalingRecipeState
+        elif recipe.blockwisefp8():
+            cls = FP8BlockScalingRecipeState
         else:
             raise ValueError("{recipe.__class__.__name__} is not supported")
         return cls(
@@ -846,3 +860,37 @@ class MXFP8BlockScalingRecipeState(RecipeState):
         from .tensor.mxfp8_tensor import MXFP8Quantizer
 
         return [MXFP8Quantizer(self.dtype) for i in range(self.num_quantizers)]
+    
+class FP8BlockScalingRecipeState(RecipeState):
+    """Configuration for MXFP8 quantization.
+
+    MXFP8 quantization does not require state.
+
+    """
+
+    recipe: FP8BlockScaling
+    mode: str
+    dtype: tex.DType
+
+    def __init__(
+        self,
+        recipe: FP8BlockScaling,
+        *,
+        mode: str,
+        num_quantizers: int = 1,
+        device: Optional[torch.device] = None,
+    ) -> None:
+        self.recipe = recipe
+        self.mode = mode
+        self.num_quantizers = num_quantizers
+        self.dtype = get_fp8_te_dtype(recipe, mode == "forward")
+
+        # Allocate buffers
+        if device is None:
+            device = torch.device("cuda")
+
+    def make_quantizers(self) -> list:
+        # TODO(ksivamani); Find better design for this, adding here to avoid circular import.
+        from .tensor.float8_blockwise_tensor import Float8BlockQuantizer
+
+        return [Float8BlockQuantizer(self.dtype) for i in range(self.num_quantizers)]

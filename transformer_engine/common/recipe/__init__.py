@@ -51,6 +51,10 @@ class Recipe:
     def delayed(self):
         """Whether the given recipe is delayed scaling."""
         return isinstance(self, DelayedScaling)
+    
+    def blockwisefp8(self):
+        """Whether the given recipe is delayed scaling."""
+        return isinstance(self, FP8BlockScaling)
 
 
 @dataclass()
@@ -170,6 +174,44 @@ class MXFP8BlockScaling(Recipe):
     of 32 consecutive values is scaled together using their own scaling
     factor. The type of the scaling factor is E8M0 (8 bits of exponent,
     0 bits of mantissa), equivalent to scaling by a power of 2.
+
+    Since the scaling happens in a particular direction (either rowwise
+    or columnwise), in this recipe the quantized tensor and its transpose
+    are not numerically equivalent. Due to this, when Transformer Engine
+    needs both the MXFP8 tensor and its transpose (e.g. to calculate both
+    forward and backward pass), during the quantization both versions are
+    computed from the high precision input to avoid double quantization
+    errors.
+
+    Parameters
+    ----------
+    fp8_format : {Format.E4M3, Format.HYBRID}, default = Format.E4M3
+                Controls the FP8 data format used during forward and backward
+                pass.
+    """
+
+    margin: int = 0
+    fp8_format: Format = Format.E4M3
+    fp8_dpa: bool = False
+    fp8_mha: bool = False
+
+    def __post_init__(self) -> None:
+        assert self.fp8_format != Format.E5M2, "Pure E5M2 training is not supported."
+
+    def __repr__(self) -> str:
+        return f"margin={self.margin}, format={str(self.fp8_format).split('.')[1]},"
+    
+@dataclass()
+class FP8BlockScaling(Recipe):
+    """
+    Use the Blockwise FP8 scaling factor strategy.
+
+    In this strategy, tensors are scaled in blockwise fashion. Each group
+    of 128 values (or 128 x 128 values if block_dim is 2 ) is scaled together using their own scaling
+    factor. The type of the scaling factor is E8M0 (8 bits of exponent,
+    0 bits of mantissa), equivalent to scaling by a power of 2.
+    The type of the scaling factor is FP32 (8 bis o exponent and 23 bits of mantissa), and can be forced 
+    into a power of 2
 
     Since the scaling happens in a particular direction (either rowwise
     or columnwise), in this recipe the quantized tensor and its transpose
