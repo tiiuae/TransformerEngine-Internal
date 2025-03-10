@@ -16,8 +16,8 @@
 #include "common/utils.cuh"
 #include "compute_scale.cuh"
 
-#if (!defined(__CUDA_MINIMUM_ARCH__)) || \
-    (defined(__CUDA_MINIMUM_ARCH__) && __CUDA_MINIMUM_ARCH__ >= 900)
+#if (!defined(__CUDA_ARCH__)) || \
+    (defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 900)
 #define TMA_HW_SUPPORTED
 #endif
 

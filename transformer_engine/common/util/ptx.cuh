@@ -17,7 +17,7 @@
 namespace transformer_engine {
 namespace ptx {
 
-#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
 
 // https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#parallel-synchronization-and-communication-instructions-mbarrier-init
 __device__ __forceinline__ void mbarrier_init(uint64_t *mbar, const uint32_t count) {
@@ -164,7 +164,7 @@ __device__ __forceinline__ void fence_proxy_async_shared_cta() {
   asm volatile("fence.proxy.async.shared::cta;");
 }
 
-#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
 
 }  // namespace ptx
 
@@ -172,7 +172,7 @@ namespace {
 
 template <int num_barriers, int THREADS_PER_BLOCK>
 __forceinline__ __device__ void initialize_barriers(uint64_t *mbar, const bool is_master_thread) {
-#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
   if (is_master_thread) {
     // Initialize barrier. All `blockDim.x * blockDim.y` threads in block participate.
 #pragma unroll
@@ -183,12 +183,12 @@ __forceinline__ __device__ void initialize_barriers(uint64_t *mbar, const bool i
   }
   // Syncthreads so initialized barrier is visible to all threads.
   __syncthreads();
-#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
 }
 
 template <int num_barriers>
 __forceinline__ __device__ void destroy_barriers(uint64_t *mbar, const bool is_master_thread) {
-#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
   // Destroy barrier. This invalidates the memory region of the barrier. If
   // further computations were to take place in the kernel, this allows the
   // memory location of the shared memory barrier to be reused.
@@ -198,13 +198,13 @@ __forceinline__ __device__ void destroy_barriers(uint64_t *mbar, const bool is_m
       ptx::mbarrier_invalid(&mbar[iter]);
     }
   }
-#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
 }
 
 __forceinline__ __device__ void copy_1d_to_shared(void *dst, const void *src,
                                                   const size_t num_bytes, uint64_t *barrier,
                                                   const bool is_master_thread) {
-#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
   if (is_master_thread) {
     // Initiate bulk tensor copy
     ptx::cp_async_bulk_tensor_1d_global_to_shared(reinterpret_cast<uint64_t *>(dst),
@@ -217,13 +217,13 @@ __forceinline__ __device__ void copy_1d_to_shared(void *dst, const void *src,
     // Other threads just arrive
     ptx::mbarrier_arrive(barrier);
   }
-#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
 }
 
 __forceinline__ __device__ void copy_2d_to_shared(void *dst, const void *src, const size_t chunk_X,
                                                   const size_t chunk_Y, const size_t num_bytes,
                                                   uint64_t *barrier, const bool is_master_thread) {
-#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
   if (is_master_thread) {
     // Initiate bulk tensor copy
     ptx::cp_async_bulk_tensor_2d_global_to_shared(reinterpret_cast<uint64_t *>(dst),
@@ -236,7 +236,7 @@ __forceinline__ __device__ void copy_2d_to_shared(void *dst, const void *src, co
     // Other threads just arrive
     ptx::mbarrier_arrive(barrier);
   }
-#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
 }
 
 __forceinline__ __device__ void copy_2d_to_sharedx2(void *dst, const void *src,
@@ -245,7 +245,7 @@ __forceinline__ __device__ void copy_2d_to_sharedx2(void *dst, const void *src,
                                                     const size_t chunk_X2, const size_t chunk_Y2,
                                                     const size_t num_bytes, uint64_t *barrier,
                                                     const bool is_master_thread) {
-#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
   if (is_master_thread) {
     // Initiate bulk tensor copy
     ptx::cp_async_bulk_tensor_2d_global_to_shared(reinterpret_cast<uint64_t *>(dst),
@@ -262,7 +262,7 @@ __forceinline__ __device__ void copy_2d_to_sharedx2(void *dst, const void *src,
     // Other threads just arrive
     ptx::mbarrier_arrive(barrier);
   }
-#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
 }
 
 __forceinline__ __device__ void copy_2d_to_sharedx3(
@@ -270,7 +270,7 @@ __forceinline__ __device__ void copy_2d_to_sharedx3(
     const void *src2, const size_t chunk_X2, const size_t chunk_Y2, void *dst3, const void *src3,
     const size_t chunk_X3, const size_t chunk_Y3, const size_t num_bytes, uint64_t *barrier,
     const bool is_master_thread) {
-#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
   if (is_master_thread) {
     // Initiate bulk tensor copy
     ptx::cp_async_bulk_tensor_2d_global_to_shared(reinterpret_cast<uint64_t *>(dst),
@@ -291,7 +291,7 @@ __forceinline__ __device__ void copy_2d_to_sharedx3(
     // Other threads just arrive
     ptx::mbarrier_arrive(barrier);
   }
-#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 1000)
+#endif  // #if (defined __CUDA_ARCH__) && (__CUDA_ARCH__ >= 900)
 }
 
 }  // namespace

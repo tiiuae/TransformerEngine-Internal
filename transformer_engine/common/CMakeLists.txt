@@ -26,6 +26,8 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wl,--version-script=${CMAKE_CURRENT_S
 # Transformer Engine library
 project(transformer_engine LANGUAGES CUDA CXX)
 
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+
 # CUDA Toolkit
 find_package(CUDAToolkit REQUIRED)
 if (CUDAToolkit_VERSION VERSION_LESS 12.0)
